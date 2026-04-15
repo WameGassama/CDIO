@@ -1,37 +1,54 @@
-#!/usr/bin/env pybricks-micropython
 from pybricks.hubs import EV3Brick
-from pybricks.ev3devices import (Motor, TouchSensor, ColorSensor,
-                                 InfraredSensor, UltrasonicSensor, GyroSensor)
-from pybricks.parameters import Port, Stop, Direction, Button, Color
-from pybricks.tools import wait, StopWatch, DataLog
-from pybricks.robotics import DriveBase
-from pybricks.media.ev3dev import SoundFile, ImageFile
+from pybricks.ev3devices import Motor, ColorSensor, UltrasonicSensor
+from pybricks.parameters import Port, Color
+from pybricks.tools import wait
 
-
-# This program requires LEGO EV3 MicroPython v2.0 or higher.
-# Click "Open user guide" on the EV3 extension tab for more information.
-
-
-# Initialize the EV3 Brick
 ev3 = EV3Brick()
 
-# Initialize the motors.
-left_motor = Motor(Port.B)
-right_motor = Motor(Port.C)
+# Motors
+left_motor = Motor(Port.A)
+right_motor = Motor(Port.B)
+arm_motor = Motor(Port.C)
 
-# Initialize the drive base.
-robot = DriveBase(left_motor, right_motor, wheel_diameter=55.5, axle_track=104)
+# Sensors
+ultraSS = UltrasonicSensor(Port.S1)
+color_sensor = ColorSensor(Port.S2)
 
-# Go forward and backwards for one meter.
-robot.straight(1000)
-ev3.speaker.beep()
+def drive_forward(speed=200):
+    left_motor.run(speed)
+    right_motor.run(speed)
 
-robot.straight(-1000)
-ev3.speaker.beep()
+def stop():
+    left_motor.stop()
+    right_motor.stop()
 
-# Turn clockwise by 360 degrees and back again.
-robot.turn(360)
-ev3.speaker.beep()
+def pick_ball():
+    arm_motor.run_angle(200, 90)   # lower scoop
+    wait(500)
+    arm_motor.run_angle(200, -90)  # lift scoop
 
-robot.turn(-360)
-ev3.speaker.beep()
+def drop_ball():
+    arm_motor.run_angle(200, 90)
+    wait(500)
+    arm_motor.run_angle(200, -90)
+
+def search_for_ball():
+    drive_forward()
+    while True:
+        if ultraSS.distance() < 150:  # object detected
+            stop()
+            return
+
+def go_to_goal():
+    drive_forward()
+    while True:
+        if color_sensor.color() == Color.RED:
+            stop()
+            return
+
+# MAIN LOOP
+while True:
+    search_for_ball()
+    pick_ball()
+    go_to_goal()
+    drop_ball()
