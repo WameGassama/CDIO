@@ -1,0 +1,2 @@
+SPEED = 30
+TURN_SPEED = 20

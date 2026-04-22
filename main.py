@@ -1,37 +1,69 @@
-#!/usr/bin/env pybricks-micropython
-from pybricks.hubs import EV3Brick
-from pybricks.ev3devices import (Motor, TouchSensor, ColorSensor,
-                                 InfraredSensor, UltrasonicSensor, GyroSensor)
-from pybricks.parameters import Port, Stop, Direction, Button, Color
-from pybricks.tools import wait, StopWatch, DataLog
-from pybricks.robotics import DriveBase
-from pybricks.media.ev3dev import SoundFile, ImageFile
+from ev3dev2.motor import LargeMotor, OUTPUT_A, OUTPUT_B, OUTPUT_C
+from ev3dev2.sensor.lego import UltrasonicSensor, ColorSensor
+from ev3dev2.sensor import INPUT_1, INPUT_2
+import time
 
+# --------------------
+# MOTORS
+# --------------------
+left_motor = LargeMotor('ev3-ports:outA')
+right_motor = LargeMotor('ev3-ports:outB')
+arm_motor = LargeMotor('ev3-ports:outC')
 
-# This program requires LEGO EV3 MicroPython v2.0 or higher.
-# Click "Open user guide" on the EV3 extension tab for more information.
+# --------------------
+# SENSORS
+# --------------------
+ultra = UltrasonicSensor(INPUT_1)
+color = ColorSensor(INPUT_2)
 
+# --------------------
+# MOVEMENT
+# --------------------
+def drive(speed=40):
+    left_motor.on(speed)
+    right_motor.on(speed)
 
-# Initialize the EV3 Brick
-ev3 = EV3Brick()
+def stop():
+    left_motor.off()
+    right_motor.off()
 
-# Initialize the motors.
-left_motor = Motor(Port.B)
-right_motor = Motor(Port.C)
+# --------------------
+# ARM
+# --------------------
+def pick_ball():
+    arm_motor.on_for_degrees(30, 90)
+    time.sleep(0.5)
+    arm_motor.on_for_degrees(30, -90)
 
-# Initialize the drive base.
-robot = DriveBase(left_motor, right_motor, wheel_diameter=55.5, axle_track=104)
+def drop_ball():
+    arm_motor.on_for_degrees(30, 90)
+    time.sleep(0.5)
+    arm_motor.on_for_degrees(30, -90)
 
-# Go forward and backwards for one meter.
-robot.straight(1000)
-ev3.speaker.beep()
+# --------------------
+# LOGIC
+# --------------------
+def search_ball():
+    drive(40)
+    while True:
+        if ultra.distance_centimeters < 15:
+            stop()
+            return
+        time.sleep(0.05)
 
-robot.straight(-1000)
-ev3.speaker.beep()
+def go_to_goal():
+    drive(40)
+    while True:
+        if color.color == ColorSensor.COLOR_RED:
+            stop()
+            return
+        time.sleep(0.05)
 
-# Turn clockwise by 360 degrees and back again.
-robot.turn(360)
-ev3.speaker.beep()
-
-robot.turn(-360)
-ev3.speaker.beep()
+# --------------------
+# MAIN LOOP
+# --------------------
+while True:
+    search_ball()
+    pick_ball()
+    go_to_goal()
+    drop_ball()
